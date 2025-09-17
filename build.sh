@@ -53,6 +53,7 @@ echo "Configuring for ${TARGET}…"
 CC="${ZIG_BIN} cc -target ${TARGET}" \
 CFLAGS="-Os -fno-pie" \
 LDFLAGS="-static -no-pie" \
+CPPFLAGS="-DDROPBEAR_X11FWD" \
 ./configure \
   --host="${TARGET}" \
   --disable-pam \
