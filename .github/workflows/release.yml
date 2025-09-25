@@ -100,10 +100,10 @@ jobs:
       - name: Upload dropbear artifact (tarballs)
         uses: actions/upload-artifact@v4
         with:
-          name: dropbear-${{ matrix.target }}
+          name: sftp-server-${{ matrix.target }}
           path: |
-            dropbear-${{ matrix.target }}.tar.xz
-            dropbear-${{ matrix.target }}.tar.xz.SHA256
+            sftp-server-${{ matrix.target }}.tar.xz
+            sftp-server-${{ matrix.target }}.tar.xz.SHA256
 
       - name: Upload sftp-server artifact (tarballs)
         uses: actions/upload-artifact@v4
