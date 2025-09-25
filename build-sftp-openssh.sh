@@ -9,13 +9,11 @@ set -ev
 : "${JOBS:=8}"
 
 # TARGET values like: x86_64-linux-musl, aarch64-linux-musl
-if [[ -z "${TARGET:-}" ]]; then
-  case "$(uname -m)" in
-    x86_64)  TARGET="x86_64-linux-musl" ;;
-    aarch64) TARGET="aarch64-linux-musl" ;;
-    *) echo "Unsupported arch $(uname -m). Set TARGET explicitly."; exit 1 ;;
-  esac
-fi
+case "$(uname -m)" in
+  x86_64)  TARGET="x86_64-linux-musl" ;;
+  aarch64) TARGET="aarch64-linux-musl" ;;
+  *) echo "Unsupported arch $(uname -m). Set TARGET explicitly."; exit 1 ;;
+esac
 
 workdir="$(pwd)"
 builddir="$(mktemp -d)"

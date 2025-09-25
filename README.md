@@ -2,7 +2,7 @@
 
 This repo publishes prebuilt **musl-linked static ELF binaries** of Dropbear,
 built automatically from upstream [mkj/dropbear](https://github.com/mkj/dropbear)
-using [Zig](https://ziglang.org/) for cross-compilation. Similarly for sftp-server.
+using [Zig](https://ziglang.org/) for static musl compilation. Similarly for sftp-server.
 
 These binaries should run on virtually any modern Linux distribution with no
 external dependencies. Builds include **X11 forwarding support**.

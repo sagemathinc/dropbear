@@ -9,13 +9,16 @@ on:
 jobs:
   build:
     name: build ${{ matrix.target }}
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        target:
-          - x86_64-linux-musl
-          - aarch64-linux-musl
+    runs-on: ${{ matrix.runs_on }}
+
+  strategy:
+    fail-fast: false
+    matrix:
+      include:
+        - target: x86_64-linux-musl
+          runs_on: ubuntu-latest
+        - target: aarch64-linux-musl
+          runs_on: ubuntu-24.04-arm
 
     env:
       DROPBEAR_VERSION: 2025.88
