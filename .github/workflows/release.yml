@@ -45,6 +45,21 @@ jobs:
         run: |
           ls -l dropbear-*.tar.xz*
 
+      - name: Make build script executable
+        run: git update-index --chmod=+x build-sftp-openssh.sh
+
+      - name: Build static sftp-server (OpenSSH)
+        env:
+          TARGET: ${{ matrix.target }}
+          OPENSSH_VERSION: 9.8p1
+          ZIG_VERSION: ${{ env.ZIG_VERSION }}
+          JOBS: ${{ env.JOBS }}
+        run: ./build-sftp-openssh.sh
+
+      - name: Show sftp outputs
+        run: ls -l sftp-server-*.tar.xz*
+
+
       # ------- Test inside Alpine (matching architecture) -------
       - name: Setup QEMU (for multi-arch containers)
         uses: docker/setup-qemu-action@v3
@@ -82,13 +97,21 @@ jobs:
             /out/dropbear -h >/dev/null
           '
 
-      - name: Upload artifact (tarballs)
+      - name: Upload dropbear artifact (tarballs)
         uses: actions/upload-artifact@v4
         with:
           name: dropbear-${{ matrix.target }}
           path: |
             dropbear-${{ matrix.target }}.tar.xz
             dropbear-${{ matrix.target }}.tar.xz.SHA256
+
+      - name: Upload sftp-server artifact (tarballs)
+        uses: actions/upload-artifact@v4
+        with:
+          name: dropbear-${{ matrix.target }}
+          path: |
+            sftp-server-${{ matrix.target }}.tar.xz
+            sftp-server-${{ matrix.target }}.tar.xz.SHA256
 
   release:
     name: create github release
@@ -113,5 +136,7 @@ jobs:
           files: |
             dist/**/dropbear-*.tar.xz
             dist/**/dropbear-*.tar.xz.SHA256
+            dist/**/sftp-server-*.tar.xz
+            dist/**/sftp-server-*.tar.xz.SHA256
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

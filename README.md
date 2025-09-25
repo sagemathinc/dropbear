@@ -1,11 +1,16 @@
-# Statically Linked [Dropbear SSH](https://github.com/mkj/dropbear) Binaries (built with Zig)
+# Statically Linked [Dropbear SSH](https://github.com/mkj/dropbear) and sftp-server Binaries (built with Zig)
 
 This repo publishes prebuilt **musl-linked static ELF binaries** of Dropbear,
 built automatically from upstream [mkj/dropbear](https://github.com/mkj/dropbear)
-using [Zig](https://ziglang.org/) for cross-compilation.
+using [Zig](https://ziglang.org/) for cross-compilation. Similarly for sftp-server.
 
 These binaries should run on virtually any modern Linux distribution with no
 external dependencies. Builds include **X11 forwarding support**.
+
+## Motivation
+
+I want to provide basic ssh server support for very general Docker containers,
+with no installation requirements. E.g,. ssh for minimal SUSE or Ubuntu images, without having to run package managers.
 
 ## Contents
 
@@ -31,6 +36,12 @@ To install, copy the two files somewhere on your `PATH`, e.g.:
 
 ```sh
 sudo cp dropbear* /usr/local/bin/
+```
+
+In order to support sftp transparently, e.g., so sshfs works, extract the sftp-server binary and place it in `/usr/libexec/`:
+
+```sh
+sudo cp sftp-server /usr/libexec/sftp-server
 ```
 
 ## Basic Dropbear Tutorial
@@ -62,9 +73,8 @@ this repo. You can rerun the same process yourself to verify results.
 
 ## Notes
 
-* Features: X11 forwarding enabled; PAM and zlib disabled; bundled libtom used.
-* These builds are intended for lightweight use in containers or
+- Features: X11 forwarding enabled; PAM and zlib disabled; bundled libtom used.
+- These builds are intended for lightweight use in containers or
   resource-constrained environments.
-* **Security:** As with any SSH server, configure carefully (authorized\_keys,
+- **Security:** As with any SSH server, configure carefully (authorized_keys,
   permissions, etc.).
-
