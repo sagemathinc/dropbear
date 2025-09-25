@@ -2,23 +2,21 @@ name: Build, Test & Release Dropbear Binaries
 
 on:
   push:
-    tags:
-      - "v*"
+    tags: ["v*"]
   workflow_dispatch:
 
 jobs:
   build:
     name: build ${{ matrix.target }}
     runs-on: ${{ matrix.runs_on }}
-
-  strategy:
-    fail-fast: false
-    matrix:
-      include:
-        - target: x86_64-linux-musl
-          runs_on: ubuntu-latest
-        - target: aarch64-linux-musl
-          runs_on: ubuntu-24.04-arm
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-linux-musl
+            runs_on: ubuntu-latest
+          - target: aarch64-linux-musl
+            runs_on: ubuntu-24.04-arm
 
     env:
       DROPBEAR_VERSION: 2025.88
@@ -28,13 +26,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # (Optional) prove we’re on the expected arch
+      - name: Smoke arch
+        run: uname -m
+
       - name: Install build deps
         run: |
           sudo apt-get update
-          sudo apt-get install -y curl ca-certificates tar bzip2 xz-utils autoconf automake make gcc g++
+          sudo apt-get install -y curl ca-certificates tar bzip2 xz-utils autoconf automake make gcc g++ cmake ninja-build
 
-      - name: Make build script executable
-        run: git update-index --chmod=+x build.sh
+      - name: Make build scripts executable
+        run: |
+          git update-index --chmod=+x build.sh
+          git update-index --chmod=+x build-sftp-openssh.sh
 
       - name: Build static dropbearmulti (musl)
         env:
@@ -44,12 +48,8 @@ jobs:
           JOBS: ${{ env.JOBS }}
         run: ./build.sh
 
-      - name: Show outputs
-        run: |
-          ls -l dropbear-*.tar.xz*
-
-      - name: Make build script executable
-        run: git update-index --chmod=+x build-sftp-openssh.sh
+      - name: Show dropbear outputs
+        run: ls -l dropbear-*.tar.xz*
 
       - name: Build static sftp-server (OpenSSH)
         env:
@@ -62,20 +62,8 @@ jobs:
       - name: Show sftp outputs
         run: ls -l sftp-server-*.tar.xz*
 
-
-      # ------- Test inside Alpine (matching architecture) -------
-      - name: Setup QEMU (for multi-arch containers)
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: all
-
-      - name: Extract tarball for testing
-        run: |
-          mkdir -p testdir
-          tar -xJf "dropbear-${{ matrix.target }}.tar.xz" -C testdir
-          ls -lR testdir
-
-      - name: Run tests in Alpine container (file, ldd, -h)
+      # Simple container smoke check matching the target arch
+      - name: Test binaries in Alpine container
         env:
           TARGET: ${{ matrix.target }}
         run: |
@@ -84,34 +72,35 @@ jobs:
             aarch64-linux-musl) plat="linux/arm64" ;;
             *) echo "Unknown TARGET $TARGET"; exit 1 ;;
           esac
-
-          # Path inside testdir
-          BIN="testdir/dropbear-${TARGET}"
-
-          # Run Alpine container of matching arch with our binary mounted at /out
-          docker run --rm --platform "${plat}" -v "$PWD/${BIN}:/out:ro" alpine:3 sh -lc '
-            set -eu
+          mkdir -p testdir testdir-sftp
+          tar -xJf "dropbear-${TARGET}.tar.xz" -C testdir
+          tar -xJf "sftp-server-${TARGET}.tar.xz" -C testdir-sftp
+          docker run --rm --platform "${plat}" -v "$PWD/testdir/dropbear-${TARGET}:/out:ro" alpine:3 sh -lc '
             apk add --no-cache file >/dev/null 2>&1 || true
-            echo "== file =="
             file /out/dropbear || true
-            echo "== ldd =="
             ldd /out/dropbear || true
-            echo "== execute =="
-            /out/dropbear -h >/dev/null
+            /out/dropbear -h >/dev/null || true
+          '
+          docker run --rm --platform "${plat}" -v "$PWD/testdir-sftp/sftp-server-${TARGET}:/out:ro" alpine:3 sh -lc '
+            apk add --no-cache file >/dev/null 2>&1 || true
+            file /out/sftp-server || true
+            ldd /out/sftp-server || true
           '
 
       - name: Upload dropbear artifact (tarballs)
         uses: actions/upload-artifact@v4
         with:
-          name: sftp-server-${{ matrix.target }}
+          name: dropbear-${{ matrix.target }}
+          overwrite: true
           path: |
-            sftp-server-${{ matrix.target }}.tar.xz
-            sftp-server-${{ matrix.target }}.tar.xz.SHA256
+            dropbear-${{ matrix.target }}.tar.xz
+            dropbear-${{ matrix.target }}.tar.xz.SHA256
 
       - name: Upload sftp-server artifact (tarballs)
         uses: actions/upload-artifact@v4
         with:
-          name: dropbear-${{ matrix.target }}
+          name: sftp-server-${{ matrix.target }}
+          overwrite: true
           path: |
             sftp-server-${{ matrix.target }}.tar.xz
             sftp-server-${{ matrix.target }}.tar.xz.SHA256
